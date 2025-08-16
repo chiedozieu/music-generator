@@ -29,11 +29,11 @@ music_gen_secrets = modal.Secret.from_name("music-gen-secret")
 
 
 class AudioGenerationBase(BaseModel):
-    audio_duration = float = 120
+    audio_duration: float = 180
     seed: int = -1
-    infer_step = int = 60
-    guidance_scale = float = 15.0
-    instrumental = bool = False
+    infer_step: int = 60
+    guidance_scale: float = 15.0
+    instrumental: bool = False
 
 
 class GenerateFromDescriptionRequest(AudioGenerationBase):
@@ -68,6 +68,7 @@ class GenerateMusicResponse(BaseModel):
     scaledown_window=15
 )
 class MusicGenServer:
+    # load the models and llm
     @modal.enter()
     def load_model(self):
         from acestep.pipeline_ace_step import ACEStepPipeline
@@ -75,7 +76,7 @@ class MusicGenServer:
         from diffusers import AutoPipelineForText2Image
         import torch
 
-# Music gen model
+       # Music gen model
         self.music_model = ACEStepPipeline(
             checkpoint_dir="/models",
             dtype="bfloat16",
@@ -138,22 +139,30 @@ class MusicGenServer:
     # run llm inference and return that
         return self.prompt_qwen(full_prompt)
 
+    def generate_categories(self, description: str) -> List[str]:
+        prompt = f"Based on the following music description, list 3-5 relevant genres or categories as a comma-separated list. For example: Pop, Electronic, Sad, afrobeat. Description: '{description}'"
+        response_text = self.prompt_qwen(prompt)
+        categories = [cat.strip()
+                      for cat in response_text.split(",") if cat.strip()]
+        return categories
+
     def generate_and_upload_to_s3(
             self,
-            lyrics: str,
             prompt: str,
+            lyrics: str,
             instrumental: bool,
             audio_duration: float,
             infer_step: int,
             guidance_scale: float,
             seed: int,
+            description_for_categorization: str
     ) -> GenerateMusicResponseS3:
         final_lyrics = "[instrumental]" if instrumental else lyrics
-        print(f"Generate lyrics: \n{final_lyrics}")
+        print(f"Generated lyrics: \n{final_lyrics}")
         print(f"Prompt: \n{prompt}")
 
         s3_client = boto3.client("s3")
-        bucket_name = os.environ("S3_BUCKET_NAME")
+        bucket_name = os.environ["S3_BUCKET_NAME"]
         output_dir = "/tmp/outputs"
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"{uuid.uuid4()}.wav")
@@ -165,8 +174,8 @@ class MusicGenServer:
             infer_step=infer_step,
             guidance_scale=guidance_scale,
             save_path=output_path,
+            manual_seeds=str(seed)
         )
-
         audio_s3_key = f"{uuid.uuid4()}.wav"
         s3_client.upload_file(output_path, bucket_name, audio_s3_key)
         os.remove(output_path)
@@ -187,8 +196,15 @@ class MusicGenServer:
         os.remove(image_output_path)
 
         # category generation
+        categories = self.generate_categories(description_for_categorization)
 
-    @modal.fastapi_endpoint(method="POST")
+        return GenerateMusicResponseS3(
+            s3_key=audio_s3_key,
+            cover_image_s3_key=image_s3_key,
+            categories=categories,
+        )
+
+    @modal.fastapi_endpoint(method="POST", requires_proxy_auth=True)
     def generate(self) -> GenerateMusicResponse:
         output_dir = "/tmp/outputs"
         os.makedirs(output_dir, exist_ok=True)
@@ -213,7 +229,7 @@ class MusicGenServer:
         return GenerateMusicResponse(audio_data=audio_b64)
 
 # generate from description
-    @modal.fastapi_endpoint(method="POST")
+    @modal.fastapi_endpoint(method="POST", requires_proxy_auth=True)
     def generate_from_description(self, request: GenerateFromDescriptionRequest) -> GenerateMusicResponseS3:
         # generating a prompt
         prompt = self.generate_prompt(request.full_described_song)
@@ -221,32 +237,48 @@ class MusicGenServer:
         lyrics = ""
         if not request.instrumental:
             lyrics = self.generate_lyrics(request.full_described_song)
-
+        return self.generate_and_upload_to_s3(prompt=prompt, lyrics=lyrics, description_for_categorization=request.full_described_song, **request.model_dump(exclude={"full_described_song"}))
 
 # custom lyrics
 
-
-    @modal.fastapi_endpoint(method="POST")
+    @modal.fastapi_endpoint(method="POST", requires_proxy_auth=True)
     def generate_with_lyrics(self, request: GenerateWithCustomLyricsRequest) -> GenerateMusicResponseS3:
-        pass
+        return self.generate_and_upload_to_s3(prompt=request.prompt, lyrics=request.lyrics, description_for_categorization=request.prompt, **request.model_dump(exclude={"prompt", "lyrics"}))
 # described lyrics
 
-    @modal.fastapi_endpoint(method="POST")
+    @modal.fastapi_endpoint(method="POST", requires_proxy_auth=True)
     def generate_with_described_lyrics(self, request: GenerateWithDescribedLyricsRequest) -> GenerateMusicResponseS3:
         # generating lyrics
-        pass
+        lyrics = ""
+        if not request.instrumental:
+            lyrics = self.generate_lyrics(request.described_lyrics)
+        return self.generate_and_upload_to_s3(prompt=request.prompt, lyrics=lyrics, description_for_categorization=request.prompt, **request.model_dump(exclude={"described_lyrics", "prompt"}))
 
 
 @app.local_entrypoint()
 def main():
     server = MusicGenServer()
-    endpoint_url = server.generate.get_web_url()
+    endpoint_url = server.generate_with_described_lyrics.get_web_url()
+    request_data = GenerateWithDescribedLyricsRequest(
+        prompt="pop, happy, upbeat, catchy, vibrant, female vocals, polished vocals",
+        described_lyrics="lyrics about Jesus goodness, grace and mercy, power and love",
+        guidance_scale=15
+    )
 
-    response = requests.post(endpoint_url)
+
+    headers = {
+        "Modal-Key": "wk-bSkEXSAIPIEr9ZTH38DrLl",
+        "Modal-Secret": "ws-RLvLgaG56M3eTttRzGdLPG"
+    }
+    payload = request_data.model_dump()
+
+    response = requests.post(endpoint_url, json=payload, headers=headers)
     response.raise_for_status()
-    result = GenerateMusicResponse(**response.json())
+    result = GenerateMusicResponseS3(**response.json())
+    print(
+        f"Success: {result.s3_key} {result.cover_image_s3_key} {result.categories}")
 
-    audio_bytes = base64.b64decode(result.audio_data)
-    output_filename = "generated.wav"
-    with open(output_filename, "wb") as f:
-        f.write(audio_bytes)
+    # audio_bytes = base64.b64decode(result.audio_data)
+    # output_filename = "generated.wav"
+    # with open(output_filename, "wb") as f:
+    #     f.write(audio_bytes)
