@@ -1,3 +1,6 @@
 {
-  "cSpell.words": ["qwen"]
+  "cSpell.words": ["qwen"],
+  "python.defaultInterpreterPath": "backend/.venv/bin/python"
 }
+
+

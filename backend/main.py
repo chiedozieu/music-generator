@@ -265,8 +265,11 @@ def main():
         guidance_scale=15
     )
 
+    headers = {
+        "Modal-Key": "wk-xbdZNXOaQEH1CKkg7OLfNY",
+        "Modal-Secret": "ws-2pOsrbvQVwGi64mOVt8TLG"
+    }
 
-   
     payload = request_data.model_dump()
 
     response = requests.post(endpoint_url, json=payload)
