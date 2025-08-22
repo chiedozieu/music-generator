@@ -87,7 +87,7 @@ export const generateSong = inngest.createFunction(
 
         // custom mode lyrics + prompt
         else if (song.lyrics && song.prompt) {
-          endpoint = env.GENERATE_FROM_DESCRIBED_LYRICS;
+          endpoint = env.GENERATE_WITH_DESCRIBED_LYRICS;
           body = {
             lyrics: song.lyrics,
             prompt: song.prompt,
@@ -96,7 +96,7 @@ export const generateSong = inngest.createFunction(
         }
         // custom mode prompt + described lyrics
         else if (song.describedLyrics && song.prompt) {
-          endpoint = env.GENERATE_FROM_DESCRIBED_LYRICS;
+          endpoint = env.GENERATE_WITH_DESCRIBED_LYRICS;
           body = {
             described_lyrics: song.describedLyrics,
             prompt: song.prompt,
@@ -133,18 +133,6 @@ export const generateSong = inngest.createFunction(
           "Modal-Secret": env.MODAL_SECRET,
         },
       });
-
-      //
-      // const text = await response.text();
-      // let responseData: { s3_key: string; cover_image_s3_key: string; categories: string[] } | null = null;
-
-      // try {
-      //   responseData = JSON.parse(text);
-      // } catch {
-      //   console.error("Non-JSON response from Modal:", text);
-      // }
-
-      //
 
       await step.run("update-song-result", async () => {
         const responseData = response.ok
