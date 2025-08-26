@@ -15,10 +15,7 @@ import { Separator } from "@radix-ui/react-separator";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
 } from "~/components/ui/breadcrumb";
 import BreadcrumbPageClient from "~/components/sidebar/breadcrumb-page-client";
 
@@ -55,7 +52,6 @@ export default function RootLayout({
                       <BreadcrumbItem>
                         <BreadcrumbPageClient />
                       </BreadcrumbItem>
-                      
                     </BreadcrumbList>
                   </Breadcrumb>
                 </div>

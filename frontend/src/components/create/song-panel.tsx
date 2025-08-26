@@ -4,9 +4,11 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
-import { Plus } from "lucide-react";
+import { Music, Plus } from "lucide-react";
 import { Switch } from "../ui/switch";
 import { Badge } from "../ui/badge";
+import { toast } from "sonner";
+import { generateSong, type GenerateRequest } from "~/actions/generation";
 
 const inspirationTags = [
   "Afro-Gospel",
@@ -27,6 +29,8 @@ const styleTags = [
   "chillwave",
   "synthwave",
   "lo-fi beats",
+  "Afro-Gospel",
+  
 ];
 
 export function SongPanel() {
@@ -36,6 +40,7 @@ export function SongPanel() {
   const [lyricsMode, setLyricsMode] = useState<"write" | "auto">("write");
   const [lyrics, setLyrics] = useState<string>("");
   const [styleInput, setStyleInput] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleInspirationTagClick = (tag: string) => {
     const currentTags = description
@@ -65,6 +70,53 @@ export function SongPanel() {
       }
     }
   };
+
+  const handleCreateSong = async () => {
+    if (mode === "simple" && !description.trim()) {
+      toast.error("Please describe your song, before creating");
+      return;
+    }
+    if (mode === "custom" && !styleInput.trim()) {
+      toast.error("Please add at least one style before creating");
+      return;
+    }
+    let requestBody: GenerateRequest;
+    if (mode === "simple") {
+      requestBody = {
+        fullDescribedSong: description,
+        instrumental,
+      };
+    } else {
+      const prompt = styleInput;
+      if (lyricsMode === "write") {
+        requestBody = {
+          prompt,
+          lyrics,
+          instrumental,
+        };
+      } else {
+        requestBody = {
+          prompt,
+          describedLyrics: lyrics,
+          instrumental,
+        };
+      }
+    }
+
+    try {
+      setLoading(true);
+      await generateSong(requestBody);
+      setDescription("");
+      setStyleInput("");
+      setLyrics("");
+    } catch (error) {
+      toast.error("Failed to create song");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-muted/30 flex w-full flex-col border-r lg:w-80">
       <div className="flex-1 overflow-y-auto p-4">
@@ -192,7 +244,7 @@ export function SongPanel() {
               </label>
               <Textarea
                 placeholder="Enter style tags"
-                className="min-h-[60px] resize-none mt-4"
+                className="mt-4 min-h-[60px] resize-none"
                 value={styleInput}
                 onChange={(e) => setStyleInput(e.target.value)}
               />
@@ -213,6 +265,26 @@ export function SongPanel() {
             </div>
           </TabsContent>
         </Tabs>
+      </div>
+      <div className="border-t p-4">
+        <Button
+          className={`w-full cursor-pointer bg-gradient-to-r from-purple-800 via-violet-900 to-indigo-700 font-bold text-white hover:bg-gradient-to-r hover:opacity-90`}
+          onClick={() => {
+            handleCreateSong();
+          }}
+          disabled={loading}
+        >
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <Music className="animate-bounce" />
+              Creating...
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <Music /> Create
+            </span>
+          )}
+        </Button>
       </div>
     </div>
   );

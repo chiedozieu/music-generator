@@ -25,7 +25,9 @@ export async function Credits() {
       user?.credits !== undefined && (
         <>
           <p className="font-semibold">{user.credits}</p>
-          <p className="text-muted-foreground">{user.credits > 1 ? "Credits" : "Credit"}</p>
+          <p className="text-muted-foreground">
+            {user.credits > 1 ? "Credits" : "Credit"}
+          </p>
         </>
       )
     );

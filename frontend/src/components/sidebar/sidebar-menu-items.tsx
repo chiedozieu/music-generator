@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { BreadcrumbPage } from "../ui/breadcrumb";
 import { Home, Music } from "lucide-react";
 import { SidebarMenuButton, SidebarMenuItem } from "../ui/sidebar";
 
