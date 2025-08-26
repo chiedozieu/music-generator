@@ -28,7 +28,6 @@ const styleTags = [
   "global fusion",
   "chillwave",
   "synthwave",
-  "lo-fi beats",
   "Afro-Gospel",
   
 ];
@@ -124,10 +123,12 @@ export function SongPanel() {
           value={mode}
           onValueChange={(value) => setMode(value as "simple" | "custom")}
         >
+          {/* simple and custom tabs switcher */}
           <TabsList className="w-full">
             <TabsTrigger value="simple">Simple</TabsTrigger>
             <TabsTrigger value="custom">Custom</TabsTrigger>
           </TabsList>
+          {/* simple tab content */}
           <TabsContent value="simple" className="mt-6 space-y-6">
             <div className="flex flex-col gap-3">
               <label className="text-sm font-medium text-gray-600">
@@ -185,6 +186,8 @@ export function SongPanel() {
                 </div>
               </div>
             </div>
+
+            {/* custom tab content */}
           </TabsContent>
           <TabsContent value="custom" className="mt-6 space-y-6">
             <div className="flex flex-col gap-3">
@@ -237,7 +240,7 @@ export function SongPanel() {
                 onCheckedChange={setInstrumental}
               />
             </div>
-            {/* styles */}
+            {/* styles input and tags */}
             <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-600">
                 Styles
