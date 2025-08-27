@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Delete,
   Download,
   Edit,
   Loader2,
@@ -11,14 +10,16 @@ import {
   Play,
   RefreshCcw,
   Search,
-  Tractor,
   Trash2,
   XCircle,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+
 
 import { useState } from "react";
 import { getPlayUrl } from "~/actions/generation";
-import { setPublishedStatus } from "~/actions/song";
+import { renameSong, setPublishedStatus } from "~/actions/song";
+import { RenameModal } from "~/components/create/rename-modal";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -50,6 +51,9 @@ export function TrackList({ tracks }: { tracks: Track[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadingTrackId, setLoadingTrackId] = useState<string | null>(null);
+  const [trackToRename, setTrackToRename] = useState<Track | null>(null);
+
+  const router = useRouter();
 
   const handleTrackSelect = async (track: Track) => {
     if (loadingTrackId) return;
@@ -61,6 +65,12 @@ export function TrackList({ tracks }: { tracks: Track[] }) {
 
     // play the song in the playbar
   };
+  const handleRefresh = async () => {
+     setIsRefreshing(true);
+     router.refresh();
+    setTimeout(() => setIsRefreshing(false), 1000);
+
+  }
 
   const filteredTracks = tracks.filter(
     (track) =>
@@ -86,7 +96,7 @@ export function TrackList({ tracks }: { tracks: Track[] }) {
             disabled={isRefreshing}
             variant="outline"
             size="sm"
-            onClick={() => {}}
+            onClick={handleRefresh}
           >
             {isRefreshing ? (
               <Loader2 className="animate-spin" />
@@ -224,13 +234,15 @@ export function TrackList({ tracks }: { tracks: Track[] }) {
                           {track.published ? "Unpublish" : "Publish"}
                         </Button>
                         <DropdownMenu>
-                          <DropdownMenuTrigger>
+                          <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
                               <MoreHorizontal />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40">
-                            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                          <DropdownMenuContent align="end" className="">
+                            <DropdownMenuLabel className="flex justify-center">
+                              File Options
+                            </DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={async (e) => {
@@ -242,7 +254,12 @@ export function TrackList({ tracks }: { tracks: Track[] }) {
                               <Download />
                               Download
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTrackToRename(track);
+                              }}
+                            >
                               <Edit />
                               Rename
                             </DropdownMenuItem>
@@ -258,10 +275,22 @@ export function TrackList({ tracks }: { tracks: Track[] }) {
               }
             })
           ) : (
-            <p>No tracks found</p>
+            <div className="flex flex-col items-center justify-center pt-20 text-center">
+                <Music className="text-muted-foreground size-10" />
+                <h2 className="mt-2 text-lg font-semibold text-muted-foreground">No Music Yet</h2>
+                <p className="text-muted-foreground mt-1 text-xs">{searchQuery ? "No tracks match your search" : "Create your first song to get started"}</p>
+
+            </div>
           )}
         </div>
       </div>
+      {trackToRename && (
+        <RenameModal
+          track={trackToRename}
+          onClose={() => setTrackToRename(null)}
+          onRename={(trackId, newTitle) => renameSong(trackId, newTitle)}
+        />
+      )}
     </div>
   );
 }

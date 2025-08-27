@@ -18,6 +18,7 @@ import {
   BreadcrumbList,
 } from "~/components/ui/breadcrumb";
 import BreadcrumbPageClient from "~/components/sidebar/breadcrumb-page-client";
+import SoundBar from "~/actions/sound-bar";
 
 export const metadata: Metadata = {
   title: "Music App",
@@ -57,6 +58,7 @@ export default function RootLayout({
                 </div>
               </header>
               <main className="flex-1 overflow-y-auto">{children}</main>
+              <SoundBar />
             </SidebarInset>
           </SidebarProvider>
           <Toaster />
