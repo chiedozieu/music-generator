@@ -8,7 +8,7 @@ import {
   Play,
   Volume2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
@@ -27,15 +27,89 @@ export default function SoundBar() {
   const [currentSongTime, setCurrentSongTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if(!audio) return;
+    const updateTime = () => setCurrentSongTime(audio.currentTime);
+    const updateDuration = () => {
+      if(!isNaN(audio.duration))
+      setDuration(audio.duration)
+    };
+    const handleTrackEnd = () => {
+      setIsPlaying(false);
+      setCurrentSongTime(0);
+    };
+
+    audio.addEventListener("timeupdate", updateTime);
+    audio.addEventListener("loadedmetadata", updateDuration);
+    audio.addEventListener("ended", handleTrackEnd);
+  
+    return () => {
+      audio.removeEventListener("timeupdate", updateTime);
+      audio.removeEventListener("loadedmetadata", updateDuration);
+      audio.removeEventListener("ended", handleTrackEnd);
+    };
+    
+  }, [track]);
+
+  useEffect(() => {
+    if (audioRef.current && track?.url) {
+      setCurrentSongTime(0);
+      setDuration(0);
+
+      audioRef.current.src = track.url;
+      audioRef.current.load();
+
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+          })
+          .catch((error) => {
+            console.error("Error playing audio:", error);
+            setIsPlaying(false);
+          });
+      }
+    }
+  }, [track]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume[0]! / 100;
+    }
+  }, [volume]);
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
 
   const handleSeek = (value: number[]) => {
-      //todo
-  }
+    if (audioRef.current && value[0] !== undefined) {
+      audioRef.current.currentTime = value[0];
+      setCurrentSongTime(value[0]);
+    }
+  };
+  
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
+  };
+
+  if (!track) {
+    return null;
   }
+  
   return (
     <div className="px-4 pb-2">
       <Card className="bg-background/60 relative w-full border-t py-0 backdrop-blur">
@@ -62,7 +136,11 @@ export default function SoundBar() {
             </div>
             {/* center controls */}
             <div className="absolute left-1/2 -translate-x-1/2">
-              <Button variant="ghost" size="icon" className="">
+              <Button
+                size="icon"
+                className="cursor-pointer rounded-full bg-gradient-to-r from-purple-800 via-violet-500 to-indigo-700 hover:opacity-80"
+                onClick={togglePlay}
+              >
                 {isPlaying ? (
                   <Pause className="size-4" />
                 ) : (
@@ -109,7 +187,7 @@ export default function SoundBar() {
 
           <div className="flex items-center gap-1">
             <span className="text-muted-foreground w-8 text-right text-[10px]">
-                    {formatTime(currentSongTime)}
+              {formatTime(currentSongTime)}
             </span>
             <Slider
               className="flex-1"
@@ -119,10 +197,18 @@ export default function SoundBar() {
               onValueChange={handleSeek}
             />
             <span className="text-muted-foreground w-8 text-left text-[10px]">
-                    {formatTime(duration)}
+              {formatTime(duration)}
             </span>
           </div>
         </div>
+
+        {track?.url && (
+          <audio
+            ref={audioRef}
+            src={track.url}
+            preload="metadata"
+          />
+        )}
       </Card>
     </div>
   );

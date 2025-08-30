@@ -50,7 +50,7 @@ export async function queueSong(
       instrumental: generateRequest.instrumental,
       describedLyrics: generateRequest.describedLyrics,
       guidanceScale: 15,
-      audioDuration: 120,
+      audioDuration: 180,
     },
   });
 

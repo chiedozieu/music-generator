@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getPresignedUrl } from "~/actions/generation";
 import { auth } from "~/lib/auth";
 import { db } from "~/server/db";
-import { TrackList } from "./track-list";
+import { TrackList } from "../../app/(main)/create/track-list";
 
 export default async function TrackListFetcher() {
   const session = await auth.api.getSession({
@@ -51,7 +51,7 @@ export default async function TrackListFetcher() {
         playUrl: null,
         status: song.status,
         createdByUserName: song.user?.name,
-        published: song.published
+        published: song.published,
       };
     }),
   );
