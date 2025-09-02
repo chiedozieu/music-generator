@@ -2,7 +2,7 @@ import { create } from "zustand";
 interface PlayerTrack {
   id: string;
   title: string | null;
-  artwork: string | null;
+  artwork?: string | null;
   url: string | null;
   prompt: string | null;
   createdByUserName: string | null;
