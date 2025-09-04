@@ -15,7 +15,7 @@ export default async function Page() {
     return redirect("/auth/sign-in");
   }
 
-  const userId = session?.user.id;
+  // const userId = session?.user.id;
   const song = await db.song.findMany({
     where: {
       published: true,
@@ -47,7 +47,7 @@ export default async function Page() {
         : null;
       return {
         ...song,
-        thumbnails3Key: thumbnailUrl,
+        thumbnailUrl,
       };
     }),
   );
@@ -69,7 +69,7 @@ export default async function Page() {
         const primaryCategory = song.categories[0];
         if (primaryCategory) {
           if (!acc[primaryCategory.name]) {
-            acc[primaryCategory.name] = [];
+            acc[primaryCategory.name] ??= [];
           }
           if (acc[primaryCategory.name]!.length < 10) {
             acc[primaryCategory.name]!.push(song);
@@ -80,22 +80,29 @@ export default async function Page() {
       {} as Record<string, Array<(typeof songsWithUrls)[number]>>,
     );
 
-    if (trendingSongs.length === 0 && Object.keys(categorizedSongs).length === 0) {
-      return <div className="flex h-full flex-col p-4 items-center justify-center text-center">
-        <Music className="text-muted-foreground size-20"/>
-        <h1 className="mt-4 text-2xl font-bold tracking-light text-gray-800">
+  if (
+    trendingSongs.length === 0 &&
+    Object.keys(categorizedSongs).length === 0
+  ) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center p-4 text-center">
+        <Music className="text-muted-foreground size-20" />
+        <h1 className="tracking-light mt-4 text-2xl font-bold text-gray-800">
           No Music Here
         </h1>
-        <p className="text-muted-foreground mt-2">There are no songs available at the moment. Please check back later.</p>
+        <p className="text-muted-foreground mt-2">
+          There are no songs available at the moment. Please check back later.
+        </p>
       </div>
-    }
-  return <div className="p-4">
-    <h1 className="text-3xl font-bold tracking-tight text-gray-800">
-      Discover Music
-    </h1>
-    {/* trending songs */}
-    {
-      trendingSongs.length > 0 && (
+    );
+  }
+  return (
+    <div className="p-4">
+      <h1 className="text-3xl font-bold tracking-tight text-gray-800">
+        Discover Music
+      </h1>
+      {/* trending songs */}
+      {trendingSongs.length > 0 && (
         <div className="mt-6">
           <h2 className="text-xl font-bold text-gray-800">Trending</h2>
           <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -104,7 +111,20 @@ export default async function Page() {
             ))}
           </div>
         </div>
-      )
-    }
-  </div>;
+      )}
+      {/* categorized songs */}
+      {Object.entries(categorizedSongs)
+        .slice(0, 5)
+        .map(([category, songs]) => (
+          <div key={category} className="mt-6">
+            <h2 className="text-xl font-bold text-gray-800">{category}</h2>
+            <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {songs.map((song) => (
+                <SongCard key={song.id} song={song} />
+              ))}
+            </div>
+          </div>
+        ))}
+    </div>
+  );
 }
