@@ -45,8 +45,10 @@ export async function AppSidebar() {
               label: "Customer Portal",
               href: "/customer-portal",
               icon: <User />,
+              
             },
           ]}
+          size="default"
         />
       </SidebarFooter>
     </Sidebar>

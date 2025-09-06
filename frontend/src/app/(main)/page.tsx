@@ -14,31 +14,42 @@ export default async function Page() {
   if (!session) {
     return redirect("/auth/sign-in");
   }
-
-  // const userId = session?.user.id;
-  const song = await db.song.findMany({
-    where: {
-      published: true,
-    },
-    include: {
-      user: {
-        select: {
-          name: true,
-        },
+const baseQuery = {
+  where: {
+    published: true,
+  },
+  include: {
+    user: {
+      select: {
+        name: true,
       },
-      _count: {
-        select: {
-          likes: true,
-        },
+    },
+    _count: {
+      select: {
+        likes: true,
       },
-      categories: true,
     },
+    categories: true,
+  },
+  orderBy: {
+    createdAt: "desc" as const,
+  },
+  take: 100,
+};
 
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 100,
-  });
+const song = await db.song.findMany({
+  ...baseQuery,
+  include: {
+    ...baseQuery.include,
+    ...(session.user.id && {
+      likes: {
+        where: {
+          userId: session.user.id
+        }
+      }
+    })
+  }
+});
 
   const songsWithUrls = await Promise.all(
     song.map(async (song) => {
