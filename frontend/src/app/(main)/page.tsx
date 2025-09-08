@@ -79,9 +79,7 @@ const song = await db.song.findMany({
       (acc, song) => {
         const primaryCategory = song.categories[0];
         if (primaryCategory) {
-          if (!acc[primaryCategory.name]) {
-            acc[primaryCategory.name] ??= [];
-          }
+          acc[primaryCategory.name] ??= [];
           if (acc[primaryCategory.name]!.length < 10) {
             acc[primaryCategory.name]!.push(song);
           }

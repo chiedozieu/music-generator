@@ -82,12 +82,12 @@ export default function SoundBar() {
     }
   }, [volume]);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play();
+       await audioRef.current.play();
       }
       setIsPlaying(!isPlaying);
     }

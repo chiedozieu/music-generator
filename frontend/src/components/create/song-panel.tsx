@@ -272,9 +272,7 @@ export function SongPanel() {
       <div className="border-t p-4">
         <Button
           className={`w-full cursor-pointer bg-gradient-to-r from-purple-800 via-violet-900 to-indigo-700 font-bold text-white hover:bg-gradient-to-r hover:opacity-90`}
-          onClick={() => {
-            handleCreateSong();
-          }}
+          onClick={handleCreateSong}
           disabled={loading}
         >
           {loading ? (

@@ -1,6 +1,7 @@
 import { AccountView } from "@daveyplate/better-auth-ui";
 import { accountViewPaths } from "@daveyplate/better-auth-ui/server";
 import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export const dynamicParams = false;
 
@@ -17,7 +18,7 @@ export default async function AccountPage({
 
   return (
     <main className="container p-4 md:p-6">
-      <a
+      <Link
         href="/"
         className="group mb-4 flex cursor-pointer items-center gap-1 text-sm hover:underline"
       >
@@ -26,7 +27,7 @@ export default async function AccountPage({
           className="transition-all duration-200 group-hover:-translate-x-1"
         />
         Back
-      </a>
+      </Link>
 
       <AccountView path={path} />
     </main>

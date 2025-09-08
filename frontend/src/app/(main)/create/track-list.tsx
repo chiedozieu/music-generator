@@ -82,7 +82,7 @@ export function TrackList({ tracks }: { tracks: Track[] }) {
 
   const filteredTracks = tracks.filter(
     (track) =>
-      track.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      track.title?.toLowerCase().includes(searchQuery.toLowerCase()) ??
       track.prompt?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
@@ -183,9 +183,7 @@ export function TrackList({ tracks }: { tracks: Track[] }) {
                     <div
                       key={track.id}
                       className="hover:bg-muted/50 flex cursor-pointer items-center gap-4 rounded-lg p-3 transition-colors"
-                      onClick={() => {
-                        handleTrackSelect(track);
-                      }}
+                      onClick={() => handleTrackSelect(track)}
                     >
                       {/* thumbnail */}
                       <div className="group relative size-12 flex-shrink-0 overflow-hidden rounded-md">
